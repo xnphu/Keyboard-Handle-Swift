@@ -6,7 +6,6 @@ target 'sample' do
   use_frameworks!
 
   # Pods for sample
-pod 'IQKeyboardManagerSwift'
   target 'sampleTests' do
     inherit! :search_paths
     # Pods for testing
