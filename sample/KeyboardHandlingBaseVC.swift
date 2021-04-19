@@ -10,31 +10,11 @@ import UIKit
 
 class KeyboardHandlingBaseVC: UIViewController,UITextFieldDelegate {
     @IBOutlet weak var backgroundSV: UIScrollView!
-    @IBOutlet weak var numberPad: UITextField! {
-        didSet {
-            numberPad.addDoneToolbar()
-        }
-    }
-    @IBOutlet weak var emailTF: UITextField! {
-        didSet {
-            emailTF.addDoneToolbar()
-        }
-    }
-    @IBOutlet weak var urlTF: UITextField! {
-        didSet {
-            urlTF.addDoneToolbar()
-        }
-    }
-    @IBOutlet weak var passwordTF: UITextField! {
-        didSet {
-            passwordTF.addDoneToolbar()
-        }
-    }
-    @IBOutlet weak var phoneNumberTF: UITextField! {
-        didSet {
-            phoneNumberTF.addDoneToolbar()
-        }
-    }
+    @IBOutlet weak var numberPad: UITextField!
+    @IBOutlet weak var emailTF: UITextField!
+    @IBOutlet weak var urlTF: UITextField!
+    @IBOutlet weak var passwordTF: UITextField!
+    @IBOutlet weak var phoneNumberTF: UITextField!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -48,6 +28,7 @@ class KeyboardHandlingBaseVC: UIViewController,UITextFieldDelegate {
         subscribeToNotification(UIResponder.keyboardWillHideNotification, selector: #selector(keyboardWillShowOrHide))
         
         initializeHideKeyboard()
+        addInputAccessoryForTextFields(textFields: [numberPad, emailTF, passwordTF, phoneNumberTF, urlTF], dismissable: true, previousNextable: true)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -71,48 +52,47 @@ class KeyboardHandlingBaseVC: UIViewController,UITextFieldDelegate {
     }
 }
 
-extension UITextField {
-    func addDoneToolbar(onPrev: (target: Any, action: Selector)? = nil, onNext: (target: Any, action: Selector)? = nil, onDone: (target: Any, action: Selector)? = nil) {
-        let onPrev = onPrev ?? (target: self, action: #selector(onPrevPressed))
-        let onNext = onNext ?? (target: self, action: #selector(onNextPressed))
-        let onDone = onDone ?? (target: self, action: #selector(onDonePressed))
-        
-        let bar = UIToolbar()
-        
-        let prevArrowBtn = UIBarButtonItem(image: UIImage(systemName: "chevron.up"), style: .plain, target: onPrev.target, action: onPrev.action)
-        let nextArrowBtn = UIBarButtonItem(image: UIImage(systemName: "chevron.down"), style: .plain, target: onNext.target, action: onNext.action)
-        let doneBtn = UIBarButtonItem(title: "Xong", style: .plain, target: onDone.target, action: onDone.action)
-        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        
-        bar.items = [prevArrowBtn,nextArrowBtn, flexSpace, doneBtn]
-        bar.sizeToFit()
-        self.inputAccessoryView = bar
-    }
-    
-    @objc func onPrevPressed() {
-        let textTag = self.tag - 1
-        // 1st superview contain label and textField; 2nd superview contain other textfield
-        let nextResponder = self.superview?.superview?.viewWithTag(textTag)
-        if (nextResponder != nil) {
-            nextResponder?.becomeFirstResponder()
-        } else {
-            self.resignFirstResponder()
+extension UIViewController {
+    func addInputAccessoryForTextFields(textFields: [UITextField], dismissable: Bool = true, previousNextable: Bool = false) {
+        for (index, textField) in textFields.enumerated() {
+            let toolbar: UIToolbar = UIToolbar()
+            toolbar.sizeToFit()
+            
+            var items = [UIBarButtonItem]()
+            
+            if previousNextable {
+                let previousButton = UIBarButtonItem(image: UIImage(systemName: "chevron.up"), style: .plain, target: nil, action: nil)
+                previousButton.width = 30
+                
+                if textField == textFields.first {
+                    previousButton.isEnabled = false
+                } else {
+                    previousButton.target = textFields[index - 1]
+                    previousButton.action = #selector(UITextField.becomeFirstResponder)
+                }
+                
+                let nextButton = UIBarButtonItem(image: UIImage(systemName: "chevron.down"), style: .plain, target: nil, action: nil)
+                nextButton.width = 30
+                
+                if textField == textFields.last {
+                    nextButton.isEnabled = false
+                } else {
+                    nextButton.target = textFields[index + 1]
+                    nextButton.action = #selector(UITextField.becomeFirstResponder)
+                }
+                items.append(contentsOf: [previousButton, nextButton])
+            }
+            
+            let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+            let doneButton = UIBarButtonItem(title: "Xong", style: .plain, target: view, action: #selector(UIView.endEditing))
+            doneButton.width = 30
+            
+            items.append(contentsOf: [spacer, doneButton])
+            
+            
+            toolbar.setItems(items, animated: false)
+            textField.inputAccessoryView = toolbar
         }
-    }
-    
-    @objc func onNextPressed() {
-        let textTag = self.tag + 1
-        // 1st superview contain label and textField; 2nd superview contain other textfield
-        let nextResponder = self.superview?.superview?.viewWithTag(textTag)
-        if (nextResponder != nil) {
-            nextResponder?.becomeFirstResponder()
-        } else {
-            self.resignFirstResponder()
-        }
-    }
-    
-    @objc func onDonePressed() {
-        self.resignFirstResponder()
     }
 }
 
