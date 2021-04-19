@@ -24,10 +24,11 @@ class KeyboardHandlingBaseVC: UIViewController,UITextFieldDelegate {
         urlTF.delegate = self
         phoneNumberTF.delegate = self
         
-        subscribeToNotification(UIResponder.keyboardWillShowNotification, selector: #selector(keyboardWillShowOrHide))
-        subscribeToNotification(UIResponder.keyboardWillHideNotification, selector: #selector(keyboardWillShowOrHide))
+        subscribeToNotification(UIResponder.keyboardWillShowNotification, selector: #selector(keyboardWillShow))
+        subscribeToNotification(UIResponder.keyboardWillHideNotification, selector: #selector(keyboardWillHide))
         
         initializeHideKeyboard()
+        
         addInputAccessoryForTextFields(textFields: [numberPad, emailTF, passwordTF, phoneNumberTF, urlTF], dismissable: true, previousNextable: true)
     }
     
@@ -52,7 +53,8 @@ class KeyboardHandlingBaseVC: UIViewController,UITextFieldDelegate {
     }
 }
 
-extension UIViewController {
+// MARK : Keyboard with Toolbar
+extension KeyboardHandlingBaseVC {
     func addInputAccessoryForTextFields(textFields: [UITextField], dismissable: Bool = true, previousNextable: Bool = false) {
         for (index, textField) in textFields.enumerated() {
             let toolbar: UIToolbar = UIToolbar()
@@ -66,6 +68,7 @@ extension UIViewController {
                 
                 if textField == textFields.first {
                     previousButton.isEnabled = false
+//                    backgroundSV.contentInset.top = 200
                 } else {
                     previousButton.target = textFields[index - 1]
                     previousButton.action = #selector(UITextField.becomeFirstResponder)
@@ -149,4 +152,24 @@ private extension KeyboardHandlingBaseVC {
         }
     }
     
+    @objc func keyboardWillShow(notification: NSNotification) {
+        guard let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue
+        else {
+            // if keyboard size is not available for some reason, dont do anything
+            return
+        }
+        
+        let contentInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: keyboardSize.height, right: 0.0)
+        backgroundSV.contentInset.bottom = contentInsets.bottom + 20
+        backgroundSV.scrollIndicatorInsets = contentInsets
+    }
+    
+    @objc func keyboardWillHide(notification: NSNotification) {
+        let contentInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0)
+        
+        
+        // reset back the content inset to zero after keyboard is gone
+        backgroundSV.contentInset = contentInsets
+        backgroundSV.scrollIndicatorInsets = contentInsets
+    }
 }
